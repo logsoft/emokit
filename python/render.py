@@ -27,7 +27,7 @@ class Grapher(object):
         self.textpos.centery = self.y + gheight
 
     def update(self, packet):
-        if len(self.buffer) == 800 - self.xoff:
+        if len(self.buffer) == 1200 - self.xoff:
             self.buffer = self.buffer[1:]
         self.buffer.append([packet.sensors[self.name]['value'], packet.sensors[self.name]['quality'], ])
 
@@ -59,7 +59,7 @@ class Grapher(object):
 def main(debug=False):
     global gheight
     pygame.init()
-    screen = pygame.display.set_mode((1600, 900))
+    screen = pygame.display.set_mode((1200, 600))
     graphers = []
     recordings = []
     recording = False
@@ -70,7 +70,7 @@ def main(debug=False):
     for name in 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' '):
         graphers.append(Grapher(screen, name, len(graphers)))
     fullscreen = False
-    emotiv = Emotiv(displayOutput=False)
+    emotiv = Emotiv(displayoutput=False)
     gevent.spawn(emotiv.setup)
     gevent.sleep(1)
     while True:
@@ -84,10 +84,10 @@ def main(debug=False):
                     return
                 elif (event.key == pygame.K_f):
                     if fullscreen:
-                        screen = pygame.display.set_mode((1600, 900))
+                        screen = pygame.display.set_mode((1200, 600))
                         fullscreen = False
                     else:
-                        screen = pygame.display.set_mode((1600,900), FULLSCREEN, 16)
+                        screen = pygame.display.set_mode((1200, 600), FULLSCREEN, 16)
                         fullscreen = True
                 elif (event.key == pygame.K_r):
                     if not recording:
@@ -101,12 +101,12 @@ def main(debug=False):
         try:
             while packetsInQueue < 8:
                 packet = emotiv.dequeue()
-                if abs(packet.gyroX) > 1:
-                    curX = max(0, min(curX, 1600))
-                    curX -= packet.gyroX
-                if abs(packet.gyroY) > 1:
-                    curY += packet.gyroY
-                    curY = max(0, min(curY, 900))
+                if abs(packet.gyrox) > 1:
+                    curX = max(0, min(curX, 1200))
+                    curX -= packet.gyrox
+                if abs(packet.gyrox) > 1:
+                    curY += packet.gyroy
+                    curY = max(0, min(curY, 600))
                 map(lambda x: x.update(packet), graphers)
                 if recording:
                     record_packets.append(packet)
@@ -124,7 +124,7 @@ def main(debug=False):
         gevent.sleep(0)
 
 try:
-    gheight = 600 / 14
+    gheight = 580 / 14
     hgheight = gheight >> 1
     main(*sys.argv[1:])
 

@@ -2,7 +2,6 @@ import gevent
 
 try:
     import pywinusb.hid as hid
-
     windows = True
 except:
     windows = False
@@ -34,29 +33,31 @@ quality_bits = [99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 
 g_battery = 0
 tasks = Queue()
 
+
 class EmotivPacket(object):
     def __init__(self, data, sensors):
         global g_battery
-        self.rawData = data
+        self.rawdata = data
         self.counter = ord(data[0])
         self.battery = g_battery
-        if(self.counter > 127):
+        if self.counter > 127:
             self.battery = self.counter
             g_battery = self.battery_percent()
             self.counter = 128
         self.sync = self.counter == 0xe9
-        self.gyroX = ord(data[29]) - 106
-        self.gyroY = ord(data[30]) - 105
-        sensors['X']['value'] = self.gyroX
-        sensors['Y']['value'] = self.gyroY
+        self.gyrox = ord(data[29]) - 106
+        self.gyroy = ord(data[30]) - 105
+        sensors['X']['value'] = self.gyrox
+        sensors['Y']['value'] = self.gyroy
         for name, bits in sensorBits.items():
-            value = self.get_level(self.rawData, bits)
+            value = self.get_level(self.rawdata, bits)
             setattr(self, name, (value,))
             sensors[name]['value'] = value
         self.handle_quality(sensors)
         self.sensors = sensors
 
-    def get_level(self, data, bits):
+    @staticmethod
+    def get_level(data, bits):
         level = 0
         for i in range(13, -1, -1):
             level <<= 1
@@ -65,8 +66,8 @@ class EmotivPacket(object):
         return level
 
     def handle_quality(self, sensors):
-        current_contact_quality = self.get_level(self.rawData, quality_bits) / 540
-        sensor = ord(self.rawData[0])
+        current_contact_quality = self.get_level(self.rawdata, quality_bits) / 540
+        sensor = ord(self.rawdata[0])
         if sensor == 0:
             sensors['F3']['quality'] = current_contact_quality
         elif sensor == 1:
@@ -189,23 +190,24 @@ class EmotivPacket(object):
             return 0
 
     def __repr__(self):
-        return 'EmotivPacket(counter=%i, battery=%i, gyroX=%i, gyroY=%i, F3=%i)' % (
+        return 'EmotivPacket(counter=%i, battery=%i, gyrox=%i, gyroy=%i, F3=%i)' % (
             self.counter,
             self.battery,
-            self.gyroX,
-            self.gyroY,
+            self.gyrox,
+            self.gyroy,
             self.F3[0],
-            )
+        )
+
 
 class Emotiv(object):
-    def __init__(self, displayOutput=False, headsetId=0, research_headset=True):
+    def __init__(self, displayoutput=False, headsetid=0, research_headset=True):
         self._goOn = True
         self.packets = Queue()
-        self.packetsReceived = 0
-        self.packetsProcessed = 0
+        self.packetsreceived = 0
+        self.packetsprocessed = 0
         self.battery = 0
-        self.displayOutput = displayOutput
-        self.headsetId = headsetId
+        self.displayoutput = displayoutput
+        self.headsetid = headsetid
         self.research_headset = research_headset
         self.sensors = {
             'F3': {'value': 0, 'quality': 0},
@@ -229,49 +231,51 @@ class Emotiv(object):
 
     def setup(self, headsetId=0):
         if windows:
-            self.setupWin()
+            self.setupwin()
         else:
-            self.setupPosix()
+            self.setupposix()
 
-    def updateStdout(self):
+    def updatestdout(self):
         while self._goOn:
-            if self.displayOutput:
+            if self.displayoutput:
                 if windows:
                     os.system('cls')
                 else:
                     os.system('clear')
-                print "Packets Received: %s Packets Processed: %s" % (self.packetsReceived, self.packetsProcessed)
-                print('\n'.join("%s Reading: %s Strength: %s" % (k[1], self.sensors[k[1]]['value'],self.sensors[k[1]]['quality']) for k in enumerate(self.sensors)))
+                print "Packets Received: %s Packets Processed: %s" % (self.packetsreceived, self.packetsprocessed)
+                print('\n'.join(
+                    "%s Reading: %s Strength: %s" % (k[1], self.sensors[k[1]]['value'], self.sensors[k[1]]['quality'])
+                    for k in enumerate(self.sensors)))
                 print "Battery: %i" % g_battery
             gevent.sleep(1)
 
-    def getLinuxSetup(self):
+    def getlinuxsetup(self):
         rawinputs = []
         for filename in os.listdir("/sys/class/hidraw"):
-            realInputPath = check_output(["realpath", "/sys/class/hidraw/" + filename])
-            sPaths = realInputPath.split('/')
-            s = len(sPaths)
+            realinputpath = check_output(["realpath", "/sys/class/hidraw/" + filename])
+            spaths = realinputpath.split('/')
+            s = len(spaths)
             s = s - 4
             i = 0
             path = ""
             while s > i:
-                path = path + sPaths[i] + "/"
+                path = path + spaths[i] + "/"
                 i += 1
             rawinputs.append([path, filename])
         hiddevices = []
         #TODO: Add support for multiple USB sticks? make a bit more elegant
-        for input in rawinputs:
+        for inputs in rawinputs:
             try:
-                with open(input[0] + "/manufacturer", 'r') as f:
+                with open(inputs[0] + "/manufacturer", 'r') as f:
                     manufacturer = f.readline()
                     f.close()
-                if "Emotiv Systems Inc." in manufacturer:
-                    with open(input[0] + "/serial", 'r') as f:
+                if "Emotiv Systems" in manufacturer:
+                    with open(inputs[0] + "/serial", 'r') as f:
                         serial = f.readline().strip()
                         f.close()
-                    print "Serial: " + serial + " Device: " + input[1]
+                    print "Serial: " + serial + " Device: " + inputs[1]
                     #Great we found it. But we need to use the second one...
-                    hidraw = input[1]
+                    hidraw = inputs[1]
                     id_hidraw = int(hidraw[-1])
                     #The dev headset might use the first device, or maybe if more than one are connected they might.
                     id_hidraw += 1
@@ -281,7 +285,7 @@ class Emotiv(object):
             except IOError as e:
                 print "Couldn't open file: %s" % e
 
-    def setupWin(self):
+    def setupwin(self):
         devices = []
         try:
             for device in hid.find_all_hid_devices():
@@ -290,20 +294,20 @@ class Emotiv(object):
                 if device.product_name == 'Brain Waves':
                     devices.append(device)
                     device.open()
-                    self.serialNum = device.serial_number
+                    self.serialnum = device.serial_number
                     device.set_raw_data_handler(self.handler)
                 elif device.product_name == 'EPOC BCI':
                     devices.append(device)
                     device.open()
-                    self.serialNum = device.serial_number
+                    self.serialnum = device.serial_number
                     device.set_raw_data_handler(self.handler)
                 elif device.product_name == '00000000000':
                     devices.append(device)
                     device.open()
-                    self.serialNum = device.serial_number
+                    self.serialnum = device.serial_number
                     device.set_raw_data_handler(self.handler)
-            gevent.spawn(self.setupCrypto, self.serialNum)
-            gevent.spawn(self.updateStdout)
+            gevent.spawn(self.setupcrypto, self.serialnum)
+            gevent.spawn(self.updatestdout)
             while self._goOn:
                 try:
                     gevent.sleep(0)
@@ -318,24 +322,24 @@ class Emotiv(object):
     def handler(self, data):
         assert data[0] == 0
         tasks.put_nowait(''.join(map(chr, data[1:])))
-        self.packetsReceived += 1
+        self.packetsreceived += 1
         return True
 
-    def setupPosix(self):
+    def setupposix(self):
         _os_decryption = False
         if os.path.exists('/dev/eeg/raw'):
             #The decrpytion is handled by the Linux epoc daemon. We don't need to handle it there.
             _os_decryption = True
             self.hidraw = open("/dev/eeg/raw")
         else:
-            setup = self.getLinuxSetup()
-            self.serialNum = setup[0]
+            setup = self.getlinuxsetup()
+            self.serialnum = setup[0]
             if os.path.exists("/dev/" + setup[1]):
                 self.hidraw = open("/dev/" + setup[1])
             else:
                 self.hidraw = open("/dev/hidraw4")
-            gevent.spawn(self.setupCrypto, self.serialNum)
-            gevent.spawn(self.updateStdout)
+            gevent.spawn(self.setupcrypto, self.serialnum)
+            gevent.spawn(self.updatestdout)
         while self._goOn:
             try:
                 data = self.hidraw.read(32)
@@ -344,23 +348,24 @@ class Emotiv(object):
                         self.packets.put_nowait(EmotivPacket(data))
                     else:
                         #Queue it!
-                        self.packetsReceived += 1
+                        self.packetsreceived += 1
                         tasks.put_nowait(data)
                         gevent.sleep(0)
             except KeyboardInterrupt:
                 self._goOn = False
         return True
 
-    def setupCrypto(self, sn):
-        type = 0 #feature[5]
-        type &= 0xF
-        type = 0
-        #I believe type == True is for the Dev headset, I'm not using that. That's the point of this library in the first place I thought.
+    def setupcrypto(self, sn):
+        typec = 0  # feature[5]
+        typec &= 0xF
+        typec = 0
+        #I believe typec == True is for the Dev headset, I'm not using that.
+        # That's the point of this library in the first place I thought.
         k = ['\0'] * 16
         k[0] = sn[-1]
         k[1] = '\0'
         k[2] = sn[-2]
-        if type:
+        if typec:
             k[3] = 'H'
             k[4] = sn[-1]
             k[5] = '\0'
@@ -384,8 +389,10 @@ class Emotiv(object):
         k[13] = '\0'
         k[14] = sn[-4]
         k[15] = 'P'
-        #It doesn't make sense to have more than one greenlet handling this as data needs to be in order anyhow. I guess you could assign an ID or something
-        #to each packet but that seems like a waste also or is it? The ID might be useful if your using multiple headsets or usb sticks.
+        #It doesn't make sense to have more than one greenlet handling this
+        # as data needs to be in order anyhow. I guess you could assign an ID or something
+        #to each packet but that seems like a waste also or is it? The ID might be useful
+        # if your using multiple headsets or usb sticks.
         key = ''.join(k)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(key, AES.MODE_ECB, iv)
@@ -394,9 +401,9 @@ class Emotiv(object):
             while not tasks.empty():
                 task = tasks.get()
                 data = cipher.decrypt(task[:16]) + cipher.decrypt(task[16:])
-                self.lastPacket = EmotivPacket(data, self.sensors)
-                self.packets.put_nowait(self.lastPacket)
-                self.packetsProcessed += 1
+                self.lastpacket = EmotivPacket(data, self.sensors)
+                self.packets.put_nowait(self.lastpacket)
+                self.packetsprocessed += 1
                 gevent.sleep(0)
             gevent.sleep(0)
 
@@ -412,6 +419,7 @@ class Emotiv(object):
         else:
             self._goOn = False
             self.hidraw.close()
+
 
 if __name__ == "__main__":
     try:
