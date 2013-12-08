@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'emokit.ui'
 #
-# Created: Fri Dec  6 09:32:47 2013
+# Created: Sun Dec  8 01:58:24 2013
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -19,11 +19,30 @@ class Ui_MainWindow(object):
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.gl_top = QtGui.QGridLayout()
         self.gl_top.setObjectName("gl_top")
-        self.comboBox_connection = QtGui.QComboBox(self.centralwidget)
-        self.comboBox_connection.setObjectName("comboBox_connection")
-        self.gl_top.addWidget(self.comboBox_connection, 0, 0, 1, 1)
+        self.lEdev = QtGui.QLineEdit(self.centralwidget)
+        self.lEdev.setMinimumSize(QtCore.QSize(149, 0))
+        self.lEdev.setMaxLength(50)
+        self.lEdev.setCursorPosition(12)
+        self.lEdev.setObjectName("lEdev")
+        self.gl_top.addWidget(self.lEdev, 0, 1, 1, 1)
+        self.pBconnect = QtGui.QPushButton(self.centralwidget)
+        self.pBconnect.setObjectName("pBconnect")
+        self.gl_top.addWidget(self.pBconnect, 0, 3, 1, 1)
+        self.label = QtGui.QLabel(self.centralwidget)
+        self.label.setObjectName("label")
+        self.gl_top.addWidget(self.label, 0, 0, 1, 1)
+        self.pBdisconnect = QtGui.QPushButton(self.centralwidget)
+        self.pBdisconnect.setObjectName("pBdisconnect")
+        self.gl_top.addWidget(self.pBdisconnect, 0, 4, 1, 1)
+        self.progressBar = QtGui.QProgressBar(self.centralwidget)
+        self.progressBar.setProperty("value", 24)
+        self.progressBar.setObjectName("progressBar")
+        self.gl_top.addWidget(self.progressBar, 0, 7, 1, 1)
         spacerItem = QtGui.QSpacerItem(938, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gl_top.addItem(spacerItem, 0, 1, 1, 1)
+        self.gl_top.addItem(spacerItem, 0, 5, 1, 1)
+        self.label_2 = QtGui.QLabel(self.centralwidget)
+        self.label_2.setObjectName("label_2")
+        self.gl_top.addWidget(self.label_2, 0, 6, 1, 1)
         self.gridLayout_3.addLayout(self.gl_top, 0, 0, 1, 1)
         self.gl_sens = QtGui.QGridLayout()
         self.gl_sens.setObjectName("gl_sens")
@@ -76,6 +95,11 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
+        self.lEdev.setText(QtGui.QApplication.translate("MainWindow", "/dev/hidraw4", None, QtGui.QApplication.UnicodeUTF8))
+        self.pBconnect.setText(QtGui.QApplication.translate("MainWindow", "Connect", None, QtGui.QApplication.UnicodeUTF8))
+        self.label.setText(QtGui.QApplication.translate("MainWindow", "Device: ", None, QtGui.QApplication.UnicodeUTF8))
+        self.pBdisconnect.setText(QtGui.QApplication.translate("MainWindow", "Disconnect", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_2.setText(QtGui.QApplication.translate("MainWindow", "Battery: ", None, QtGui.QApplication.UnicodeUTF8))
         self.menu_File.setTitle(QtGui.QApplication.translate("MainWindow", "&File", None, QtGui.QApplication.UnicodeUTF8))
         self.toolBar.setWindowTitle(QtGui.QApplication.translate("MainWindow", "toolBar", None, QtGui.QApplication.UnicodeUTF8))
         self.action_OpenSetup.setText(QtGui.QApplication.translate("MainWindow", "&OpenSetup", None, QtGui.QApplication.UnicodeUTF8))

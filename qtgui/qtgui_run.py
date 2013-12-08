@@ -20,7 +20,7 @@ qtversion = PySide.QtCore.__version__
 pyversion = sys.version.strip('\n')
 
 #setup the logging
-logging.basicConfig(filename='qtgui.log',
+logging.basicConfig(handlers=[logging.FileHandler("example1.log"), logging.StreamHandler()],
                     format='%(asctime)s %(name)s: %(levelname)s %(module)s , line %(lineno)d , $ %(message)s',
                     level=logging.DEBUG)
 logging.info('pysideversion: %s' % pysidever)
