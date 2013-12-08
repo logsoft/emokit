@@ -243,6 +243,7 @@ class Emotiv(QtCore.QThread):
         self.devname = devname
         self.serial = ser
         self.cipher = self.setupcrypto(ser)
+        #todo: catch exception no privileg
         self.device = open(self.devname, 'r')
         self.exiting = False
         self.start()
