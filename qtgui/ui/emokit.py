@@ -83,7 +83,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.y2[:] = self.databuffer2
         #self.curve.setData(self.y)
         self.curve2.setData(self.y2)
-        print packet['Battery']['value']
 
         if self.emotiv.packetsprocessed > self.updatecnt :
             self.updatecnt = self.emotiv.packetsprocessed +200
