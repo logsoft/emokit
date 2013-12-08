@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>pyqt epoc by hpl</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,2">
@@ -125,6 +125,8 @@
    <addaction name="separator"/>
    <addaction name="action_OpenConnection"/>
    <addaction name="action_CloseConnection"/>
+   <addaction name="separator"/>
+   <addaction name="actionQuality"/>
   </widget>
   <action name="action_OpenSetup">
    <property name="icon">
@@ -160,6 +162,18 @@
    </property>
    <property name="text">
     <string>&amp;CloseConnection</string>
+   </property>
+  </action>
+  <action name="actionQuality">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/weather_lightning.png</normaloff>:/icons/icons/weather_lightning.png</iconset>
+   </property>
+   <property name="text">
+    <string>quality</string>
+   </property>
+   <property name="toolTip">
+    <string>show sensor quality</string>
    </property>
   </action>
  </widget>

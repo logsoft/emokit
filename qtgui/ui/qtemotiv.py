@@ -32,16 +32,13 @@ sensorBits = {
 }
 quality_bits = [99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112]
 
-g_battery = 0
-tasks = Queue()
-
 
 class EmotivPacket(object):
     def __init__(self, data, sensors):
-        global g_battery
         self.rawdata = data
         self.counter = ord(data[0])
-        self.battery = g_battery
+        self.battery = -1
+        print self.counter
         if self.counter > 127:
             self.battery = self.counter
             sensors['Battery']['value'] =  self.battery_percent()

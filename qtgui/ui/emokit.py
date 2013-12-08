@@ -24,6 +24,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         QtGui.QMainWindow.__init__(self, parent)
         self.setupUi(self)
         self.sensors = 'AF3 F7 F3 FC5 T7 P7 O1 O2 P8 T8 FC6 F4 F8 AF4'.split(' ')
+        self.updatecnt = 0
         self.senswidgets = {}
         self.emotiv = Emotiv()
         self.serial, device = self.emotiv.setupposix()
@@ -56,7 +57,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.plt.showGrid(x=True,y=True)
         self.plt.setLabel('left', 'amplitude', 'V')
         self.plt.setLabel('bottom', 'time', 's')
-        self.curve = self.plt.plot(self.x, self.y, pen=(255,0,0))
+        #self.curve = self.plt.plot(self.x, self.y, pen=(255,0,0))
         self.curve2 = self.plt.plot(self.x, self.y, pen=(255,255,0))
         self.gl_sens.addWidget(self.plt, 0 ,0)
 
@@ -80,11 +81,15 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         value = packet['F7']['value']
         self.databuffer2.append( value)
         self.y2[:] = self.databuffer2
-        self.curve.setData(self.y)
+        #self.curve.setData(self.y)
         self.curve2.setData(self.y2)
+        print packet['Battery']['value']
 
-        self.progressBar.setValue(packet['Battery']['value'])
-
+        if self.emotiv.packetsprocessed > self.updatecnt :
+            self.updatecnt = self.emotiv.packetsprocessed +200
+            self.statusBar().showMessage("Packets received: %i" % self.emotiv.packetsprocessed)
+            if  packet['Battery']['value'] > -1:
+                self.progressBar.setValue(packet['Battery']['value'])
 
 
     @QtCore.Slot()
