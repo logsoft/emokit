@@ -38,7 +38,6 @@ class EmotivPacket(object):
         self.rawdata = data
         self.counter = ord(data[0])
         self.battery = -1
-        print self.counter
         if self.counter > 127:
             self.battery = self.counter
             sensors['Battery']['value'] =  self.battery_percent()

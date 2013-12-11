@@ -12,6 +12,8 @@ import pyqtgraph as pg
 from ui.qtemotiv import Emotiv
 from ui.qtemotiv import sensorBits
 import numpy as np
+from ui.sensorwidget import SensorWidget
+
 
 class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
     """
@@ -61,6 +63,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.curve2 = self.plt.plot(self.x, self.y, pen=(255,255,0))
         self.gl_sens.addWidget(self.plt, 0 ,0)
 
+        #sensor quality widget
+        self.quality = SensorWidget(self)
+        self.quality.resize(QtCore.QSize(150,150))
+        self.gl_quality.addWidget(self.quality,0,0)
+
     def __del__(self):
         self.emotiv.closecon()
 
@@ -87,6 +94,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         if self.emotiv.packetsprocessed > self.updatecnt :
             self.updatecnt = self.emotiv.packetsprocessed +200
             self.statusBar().showMessage("Packets received: %i" % self.emotiv.packetsprocessed)
+            self.quality.setstrenght(self.emotiv.sensors)
             if  packet['Battery']['value'] > -1:
                 self.progressBar.setValue(packet['Battery']['value'])
 
