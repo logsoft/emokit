@@ -17,21 +17,23 @@ pysidever = PySide.__version__
 # Prints the Qt version used to compile PySide
 qtversion = PySide.QtCore.__version__
 #get the python version
-pyversion = sys.version.strip('\n')
+pyversion = sys.version.replace('\n',' ')
 
 #setup the logging
-logging.basicConfig(handlers=[logging.FileHandler("example1.log"), logging.StreamHandler()],
+logging.basicConfig(filename="emoqt.log",
                     format='%(asctime)s %(name)s: %(levelname)s %(module)s , line %(lineno)d , $ %(message)s',
                     level=logging.DEBUG)
-logging.info('pysideversion: %s' % pysidever)
-logging.info('compiled to QT version: %s' % qtversion)
-logging.info('python version: %s' % pyversion)
+logger = logging.getLogger(__name__)
+
+#log basics
+logger.info('pysideversion: %s' % pysidever)
+logger.info('compiled to QT version: %s' % qtversion)
+logger.info('python version: %s' % pyversion)
 
 
+#exit handler
 def exitthings():
     logging.info('shuting down by user!?')
-
-
 atexit.register(exitthings)
 
 

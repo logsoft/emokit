@@ -1,9 +1,13 @@
+# coding=utf-8
 import logging
 from PySide import QtCore
+from PySide import QtGui
+
 import time
 
 try:
     import pywinusb.hid as hid
+
     windows = True
 except:
     windows = False
@@ -40,7 +44,7 @@ class EmotivPacket(object):
         self.battery = -1
         if self.counter > 127:
             self.battery = self.counter
-            sensors['Battery']['value'] =  self.battery_percent()
+            sensors['Battery']['value'] = self.battery_percent()
             self.counter = 128
         self.sync = self.counter == 0xe9
         self.gyrox = ord(data[29]) - 106
@@ -54,6 +58,7 @@ class EmotivPacket(object):
         self.handle_quality(sensors)
         self.sensors = sensors
 
+
     @staticmethod
     def get_level(data, bits):
         level = 0
@@ -62,6 +67,7 @@ class EmotivPacket(object):
             b, o = (bits[i] / 8) + 1, bits[i] % 8
             level |= (ord(data[b]) >> o) & 1
         return level
+
 
     def handle_quality(self, sensors):
         current_contact_quality = self.get_level(self.rawdata, quality_bits) / 540
@@ -137,6 +143,7 @@ class EmotivPacket(object):
             sensors['Unknown']['value'] = sensor
         return current_contact_quality
 
+
     def battery_percent(self):
         if self.battery > 248:
             return 100
@@ -187,6 +194,7 @@ class EmotivPacket(object):
         else:
             return 0
 
+
     def __repr__(self):
         return 'EmotivPacket(counter=%i, battery=%i, gyrox=%i, gyroy=%i)' % (
             self.counter,
@@ -198,10 +206,12 @@ class EmotivPacket(object):
 
 class Emotiv(QtCore.QThread):
     packet = QtCore.Signal(dict)
+
+
     def __init__(self, parent=None):
         super(Emotiv, self).__init__(parent)
         self.exiting = False
-        self.log = logging.getLogger('Emotiv')
+        self.log = logging.getLogger(__name__)
         self.devname = None
         self.device = None
         self.cipher = None
@@ -226,11 +236,12 @@ class Emotiv(QtCore.QThread):
             'FC5': {'value': 0, 'quality': 0},
             'X': {'value': 0, 'quality': 0},
             'Y': {'value': 0, 'quality': 0},
-            'Battery': {'value': 0, 'quality':0},
+            'Battery': {'value': 0, 'quality': 0},
             'Unknown': {'value': 0, 'quality': 0}
-            }
+        }
         self.hidraw = None
         self.lastpacket = None
+
 
     def __del__(self):
         self.exiting = True
@@ -238,14 +249,22 @@ class Emotiv(QtCore.QThread):
         if self.device is not None:
             self.device.close()
 
-    def opencon(self, devname, ser):
+
+    def opencon(self, devname, serialnr):
         self.devname = devname
-        self.serial = ser
-        self.cipher = self.setupcrypto(ser)
-        #todo: catch exception no privileg
-        self.device = open(self.devname, 'r')
-        self.exiting = False
-        self.start()
+        self.cipher = self.setupcrypto(serialnr)
+        try:
+            self.device = open(self.devname, 'r')
+            self.exiting = False
+            self.start()
+        except IOError:
+            msgbox = QtGui.QMessageBox()
+            msgbox.setText("Can not open emotiv device %s" %devname)
+            msgbox.setInformativeText("Do you have the filerights?")
+            msgbox.setStandardButtons(QtGui.QMessageBox.Discard)
+            msgbox.setDefaultButton(QtGui.QMessageBox.Discard)
+            ret = msgbox.exec_()
+
 
     def closecon(self):
         self.exiting = True
@@ -254,18 +273,18 @@ class Emotiv(QtCore.QThread):
             self.device.close()
             self.device = None
 
+
     def getlinuxdevices(self):
         rawinputs = []
         for filename in os.listdir("/sys/class/hidraw"):
             #realinputpath = check_output(["realpath", "/sys/class/hidraw/" + filename])
             realinputpath = os.path.realpath("/sys/class/hidraw/" + filename)
-            print realinputpath
+            self.log.debug('realinputpath: %s' % realinputpath)
             spaths = realinputpath.split('/')
             path = '/'.join(spaths[:-4])
             rawinputs.append([path, filename])
 
         devices = []
-        print rawinputs
         #TODO: Add support for multiple USB sticks? make a bit more elegant
         for inputs in rawinputs:
             try:
@@ -273,23 +292,21 @@ class Emotiv(QtCore.QThread):
                     with open(inputs[0] + "/manufacturer", 'r') as f:
                         manufacturer = f.readline()
                         f.close()
-                        print manufacturer
                     if "Emotiv Systems" in manufacturer:
-                        #print inputs
                         with open(inputs[0] + "/serial", 'r') as f:
-                            serial = f.readline().strip()
+                            serialnr = f.readline().strip()
                             f.close()
-                        print "Serial: " + serial + " Device: " + inputs[1]
-                        #Great we found it. But we need to use the second one...
+                            #Great we found it. But we need to use the second one...
                         hidraw = inputs[1]
                         id_hidraw = int(hidraw[-1])
                         #The dev headset might use the first device, or maybe if more than one are connected they might.
                         hidraw = "hidraw" + id_hidraw.__str__()
-                        print "Serial: " + serial + " Device: " + hidraw + " (Active)"
-                        devices.append((serial, hidraw))
+                        self.log.debug("Serial: %s Device: %s" % (serialnr, inputs[1]))
+                        devices.append((serialnr, hidraw))
             except IOError as e:
-                print "Couldn't open file: %s" % e
+                self.log.info("Couldn't open input: %s" % e)
         return devices
+
 
     def setupposix(self):
         _os_decryption = False
@@ -299,13 +316,17 @@ class Emotiv(QtCore.QThread):
             return "/dev/eeg/raw"
         else:
             devices = self.getlinuxdevices()
-            print devices
-            for device in devices:
-                serialnum = device[0]
-                if os.path.exists("/dev/" + device[1]):
-                    return (device[0], "/dev/" + device[1])
-                else:
-                    return "None"
+            self.log.debug('devices: %s' % devices)
+            if len(devices) > 0:
+                for device in devices:
+                    serialnum = device[0]
+                    if os.path.exists("/dev/" + device[1]):
+                        return (device[0], "/dev/" + device[1])
+                    else:
+                        return None, None
+            else:
+                return None, None
+
 
     def run(self):
         while not self.exiting:
@@ -318,15 +339,11 @@ class Emotiv(QtCore.QThread):
                 self.packet.emit(self.sensors)
 
             if self.displayoutput:
-                # if windows:
-                #     os.system('cls')
-                # else:
-                #     os.system('clear')
-                print "Packets Processed: %s" % self.packetsprocessed
-                print('\n'.join(
+                self.log.info("Packets Processed: %s" % self.packetsprocessed)
+                self.log.info('\n'.join(
                     "%s Reading: %s Strength: %s" % (k[1], self.sensors[k[1]]['value'], self.sensors[k[1]]['quality'])
                     for k in enumerate(self.sensors)))
-                #print "Battery: %i" % g_battery
+
 
     @staticmethod
     def setupcrypto(sn):
@@ -378,7 +395,7 @@ class Emotiv(QtCore.QThread):
 if __name__ == "__main__":
 
     a = Emotiv(None)
-    serial, dev =  a.setupposix()
+    serial, dev = a.setupposix()
 
     try:
 

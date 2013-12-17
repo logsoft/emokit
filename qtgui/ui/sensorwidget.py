@@ -21,8 +21,8 @@ class SensorWidget(QtGui.QWidget):
             'F4' : (60,25,-6),
             'F8' : (77,22,-6),
             'AF4' : (65,13,-8),
-            'REFL' : (12,56,6),
-            'REFR' : (83,56,-11),
+            # 'REFL' : (12,56,6),
+            # 'REFR' : (83,56,-11),
         }
         self.strenght ={
             'AF3' :0.6,
@@ -39,8 +39,8 @@ class SensorWidget(QtGui.QWidget):
             'F4' : 0,
             'F8' : 0,
             'AF4' :0,
-            'REFL' : 0,
-            'REFR' : 0,
+            # 'REFL' : 0,
+            # 'REFR' : 0,
         }
 
     def setstrenght(self,sensors):
@@ -76,9 +76,9 @@ class SensorWidget(QtGui.QWidget):
         for name in self.senspos:
             x,y,tp = self.senspos[name]
             strenght = self.strenght[name]
-            if strenght < 8:
+            if strenght < 5:
                 qp.setBrush(QtCore.Qt.red)
-            elif strenght < 13:
+            elif strenght < 10:
                 qp.setBrush(QtCore.Qt.yellow)
             else:
                 qp.setBrush(QtCore.Qt.green)
