@@ -61,6 +61,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.timewindow = 1000.
         self._bufsize = int(self.timewindow / self.sampleinterval)
         self.x = np.linspace(-self.timewindow, 0.0, self._bufsize)
+
         #generate data buffer
         self.databuffer = {}
         self.y_axes = {}
@@ -68,15 +69,17 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
             self.databuffer[sens] = collections.deque([0.0] * self._bufsize, self._bufsize)
             # init y axes
             self.y_axes[sens] = np.zeros(self._bufsize, dtype=np.float)
+
         # PyQtGraph stuff
         self.plt = pg.PlotWidget(name='test')
         self.plt.showGrid(x=True, y=True)
         self.plt.setLabel('left', 'amplitude', 'V')
         self.plt.setLabel('bottom', 'time', 's')
+
         # generate curves
-        self.curves = {}
+        self.named_plots = {}
         for sens in self.sensors:
-            self.curves[sens] = self.plt.plot(self.x, self.y_axes[sens], pen=color[sens])
+            self.named_plots[sens] = self.plt.plot(self.x, self.y_axes[sens], pen=color[sens])
         self.gl_sens.addWidget(self.plt, 0, 0)
 
         #sensor quality widget
@@ -118,7 +121,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         if self.emotiv.packetsprocessed > self.updatecnt:
             for sens in self.sensors:
                 self.y_axes[sens][:] = self.databuffer[sens]
-                self.curves[sens].setData(self.y_axes[sens])
+                self.named_plots[sens].setData(self.y_axes[sens])
 
             self.updatecnt = self.emotiv.packetsprocessed + 128
             self.statusBar().showMessage("Packets received: %i" % self.emotiv.packetsprocessed)
